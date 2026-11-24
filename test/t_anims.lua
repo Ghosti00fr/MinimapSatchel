@@ -24,6 +24,8 @@ for _, id in ipairs(MS.Anims.order) do
     local fx = MS.Anims.fx
     ok(fx:IsShown() and target:GetAlpha() == 0, id .. " : effet affiché, cible masquée pendant l'animation")
     M.advance(2)
+    ok(fx:IsShown(), id .. " : toujours visible après 2,3 s (jouée 3 fois)")
+    M.advance(4)
     ok(not fx:IsShown() and target:GetAlpha() == 1, id .. " : fin propre, cible rendue")
 end
 
@@ -34,7 +36,7 @@ local t2 = CreateFrame("Button", "T2", Minimap); t2.w, t2.h = 30, 30; t2.center 
 MS.Anims.play("shake", t1); M.advance(0.2)
 MS.Anims.play("bounce", t2); M.advance(0.1)
 ok(t1:GetAlpha() == 1 and t2:GetAlpha() == 0, "relance : ancienne cible rendue")
-M.advance(2)
+M.advance(6)
 ok(t2:GetAlpha() == 1, "relance : nouvelle cible rendue à la fin")
 
 -- icône : sac pour le bouton-sac, enveloppe sinon
@@ -47,5 +49,9 @@ ok(MS.Anims.IconFor(t2):find("envelope"), "enveloppe pour le cadre courrier")
 MS = setup()
 local faded = CreateFrame("Button", "Faded", Minimap); faded.w, faded.h = 30, 30; faded.center = { 0, 0 }
 faded:SetAlpha(0.4)
-MS.Anims.play("bounce", faded); M.advance(2)
+MS.Anims.play("bounce", faded); M.advance(6)
 ok(faded:GetAlpha() == 0.4, "alpha d'origine rendu après l'animation")
+
+-- durée totale = 3 cycles
+MS = setup()
+ok(MS.Anims.Total("bounce") == 3 * 1.6 and MS.Anims.Total("shake") == 3 * 1.0, "durée totale = 3 cycles")

@@ -10,8 +10,13 @@
 
 local MS = MinimapSatchel
 
-local A = { defs = {}, order = {} }
+local A = { defs = {}, order = {}, REPEATS = 3 }   -- chaque effet est joué 3 fois de suite
 MS.Anims = A
+
+function A.Total(id)
+    local def = A.defs[id]
+    return def and def.duration * (def.repeats or A.REPEATS) or 0
+end
 
 function A.register(id, def)
     if not A.defs[id] then A.order[#A.order + 1] = id end
@@ -85,8 +90,14 @@ fx:SetScript("OnUpdate", function(_, dt)
     if not current then fx:Hide(); return end
     current.t = current.t + dt
     local def = current.def
-    if current.t >= def.duration then finish(); return end
-    def.update(fx, current.t)
+    if current.t >= current.total then finish(); return end
+    local cycle = math.floor(current.t / def.duration)
+    if cycle ~= current.cycle then                       -- nouveau cycle : on repart de l'état initial
+        current.cycle = cycle
+        reset(current.target)
+        if def.start then def.start(fx, current.target) end
+    end
+    def.update(fx, current.t - cycle * def.duration)
 end)
 
 function A.play(id, target)
@@ -94,7 +105,8 @@ function A.play(id, target)
     if not def or not target then return false end
     finish()
     reset(target)
-    current = { def = def, target = target, t = 0, alpha = target:GetAlpha() or 1 }
+    current = { def = def, target = target, t = 0, alpha = target:GetAlpha() or 1,
+                total = A.Total(id), cycle = 0 }
     target:SetAlpha(0)
     if def.start then def.start(fx, target) end
     fx:Show()

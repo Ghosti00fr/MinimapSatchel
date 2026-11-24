@@ -5,7 +5,7 @@
 ## Notes-esES: Guarda todos los iconos de addons del minimapa en una bolsa. Saca los que quieras arrastrándolos, fondo oscuro o del color de tu clase, aviso de correo animado.
 ## Notes-esMX: Guarda todos los iconos de addons del minimapa en una bolsa. Saca los que quieras arrastrándolos, fondo oscuro o del color de tu clase, aviso de correo animado.
 ## Author: Ghosti
-## Version: 0.0.1
+## Version: 0.0.2
 ## X-License: All Rights Reserved
 ## SavedVariables: MinimapSatchelDB
 

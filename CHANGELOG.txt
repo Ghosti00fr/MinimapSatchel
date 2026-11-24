@@ -1,3 +1,6 @@
+0.0.2
+- Mail alert: each animation now plays 3 times in a row (about 3 to 5 seconds) so you have time to see it.
+
 0.0.1
 - First release.
 - Collects every addon minimap icon into a satchel button (LibDBIcon + custom buttons).

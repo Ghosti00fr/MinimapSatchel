@@ -5,7 +5,7 @@
 -- ============================================================
 
 local MS = MinimapSatchel
-MS.VERSION    = "0.0.1"
+MS.VERSION    = "0.0.2"
 MS.DB_VERSION = 1
 MS.PATH       = "Interface\\AddOns\\MinimapSatchel\\"
 MS.TEX        = MS.PATH .. "textures\\"
