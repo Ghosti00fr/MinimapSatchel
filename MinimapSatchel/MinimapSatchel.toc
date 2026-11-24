@@ -1,0 +1,22 @@
+## Interface: 16001
+## Title: Minimap Satchel
+## Notes: Gathers every addon icon around your minimap into one satchel button. Drag out the ones you want to keep, dark or class-colored background, animated mail alert.
+## Notes-frFR: Range toutes les icônes d'addons de la minimap dans un sac. Sors celles que tu veux garder par glisser, fond sombre ou couleur de classe, alerte courrier animée.
+## Notes-esES: Guarda todos los iconos de addons del minimapa en una bolsa. Saca los que quieras arrastrándolos, fondo oscuro o del color de tu clase, aviso de correo animado.
+## Notes-esMX: Guarda todos los iconos de addons del minimapa en una bolsa. Saca los que quieras arrastrándolos, fondo oscuro o del color de tu clase, aviso de correo animado.
+## Author: Ghosti
+## Version: 0.0.1
+## X-License: All Rights Reserved
+## SavedVariables: MinimapSatchelDB
+
+Locales\enUS.lua
+Locales\frFR.lua
+Locales\esES.lua
+Core.lua
+Anims.lua
+Collector.lua
+Placement.lua
+Satchel.lua
+Mail.lua
+Options.lua
+Commands.lua

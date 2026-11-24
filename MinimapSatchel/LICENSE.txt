@@ -1,0 +1,32 @@
+Minimap Satchel
+Copyright (c) 2026 Ghosti. All Rights Reserved.
+
+This add-on, including its source code, images, sounds and texts, is the
+property of its author. You may download it and use it in your own game.
+
+Without prior written permission from the author, you may NOT:
+  - copy, reproduce or redistribute this add-on, in whole or in part;
+  - modify it, translate it, or create derivative works from it;
+  - publish it, or any part of it, on any website, add-on platform
+    or repository;
+  - sell it or use it for any commercial purpose.
+
+This add-on is provided "as is", without warranty of any kind.
+
+--------------------------------------------------------------------------
+
+Minimap Satchel
+Copyright (c) 2026 Ghosti. Tous droits réservés.
+
+Cet addon, y compris son code source, ses images, ses sons et ses textes,
+est la propriété de son auteur. Vous pouvez le télécharger et l'utiliser
+dans votre propre jeu.
+
+Sans l'autorisation écrite préalable de l'auteur, il est INTERDIT de :
+  - copier, reproduire ou redistribuer cet addon, en tout ou en partie ;
+  - le modifier, le traduire ou en créer des œuvres dérivées ;
+  - le publier, en tout ou en partie, sur un site web, une plateforme
+    d'addons ou un dépôt de code ;
+  - le vendre ou l'utiliser à des fins commerciales.
+
+Cet addon est fourni « tel quel », sans garantie d'aucune sorte.
