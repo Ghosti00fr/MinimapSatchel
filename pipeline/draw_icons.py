@@ -2,6 +2,7 @@
 # Textures du bouton-sac (64x64 TGA) et logo CurseForge 400x400 (PNG).
 #   MinimapSatchel/textures/satchel.tga : sacoche en cuir, rabat, boucle dorée
 #   MinimapSatchel/textures/disc.tga    : disque blanc (fond teinté en jeu)
+#   MinimapSatchel/textures/envelope.tga : enveloppe au sceau rouge (alerte courrier)
 #   build/logo.png                      : sacoche sur fond sombre, icônes qui en sortent
 # Usage : python pipeline/draw_icons.py   (depuis la racine du projet)
 import math
@@ -44,6 +45,22 @@ def satchel(size):
     d.rounded_rectangle([26 * u, 38 * u, 38 * u, 50 * u], radius=2 * u, fill=GOLD, outline=GOLD_DARK,
                         width=int(2 * u))
     d.rectangle([30.5 * u, 41 * u, 33.5 * u, 47 * u], fill=GOLD_DARK)
+    return img.resize((size, size), Image.LANCZOS)
+
+
+def envelope(size):
+    """Enveloppe crème au sceau de cire rouge (proche de l'icône courrier du jeu)."""
+    n = size * K
+    img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    u = n / 64
+    paper, edge = (240, 226, 190), (120, 90, 50)
+    d.rounded_rectangle([4 * u, 14 * u, 60 * u, 52 * u], radius=4 * u, fill=paper, outline=edge, width=int(2.5 * u))
+    d.line([(5 * u, 50 * u), (26 * u, 32 * u)], fill=edge, width=int(1.6 * u))
+    d.line([(59 * u, 50 * u), (38 * u, 32 * u)], fill=edge, width=int(1.6 * u))
+    d.polygon([(5 * u, 15 * u), (59 * u, 15 * u), (32 * u, 38 * u)], fill=(228, 210, 168), outline=edge)
+    d.ellipse([23 * u, 27 * u, 41 * u, 45 * u], fill=(176, 28, 30), outline=(110, 12, 14), width=int(2 * u))
+    d.ellipse([28 * u, 31 * u, 34 * u, 36 * u], fill=(214, 70, 64))
     return img.resize((size, size), Image.LANCZOS)
 
 
@@ -92,6 +109,8 @@ if __name__ == "__main__":
     BUILD.mkdir(parents=True, exist_ok=True)
     satchel(64).save(TEX / "satchel.tga")
     disc(64).save(TEX / "disc.tga")
+    envelope(64).save(TEX / "envelope.tga")
+    envelope(256).save(BUILD / "envelope_preview.png")
     logo().save(BUILD / "logo.png")
     satchel(256).save(BUILD / "satchel_preview.png")
     print("ok", TEX, BUILD)
