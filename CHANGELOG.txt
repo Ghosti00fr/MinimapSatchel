@@ -1,0 +1,7 @@
+0.0.1
+- First release.
+- Collects every addon minimap icon into a satchel button (LibDBIcon + custom buttons).
+- Drag icons out to keep them around the minimap, drag them back to store them.
+- Dark or class-colored background, group icons by addon.
+- Animated mail alert with sound (3 styles), optional Blizzard buttons in the satchel.
+- English, French, Spanish.
