@@ -42,3 +42,10 @@ MS = setup()
 MS.Satchel = { button = t1 }
 ok(MS.Anims.IconFor(t1):find("satchel"), "icône du sac pour le bouton-sac")
 ok(MS.Anims.IconFor(t2):find("envelope"), "enveloppe pour le cadre courrier")
+
+-- alpha d'origine rendu (bouton en fondu)
+MS = setup()
+local faded = CreateFrame("Button", "Faded", Minimap); faded.w, faded.h = 30, 30; faded.center = { 0, 0 }
+faded:SetAlpha(0.4)
+MS.Anims.play("bounce", faded); M.advance(2)
+ok(faded:GetAlpha() == 0.4, "alpha d'origine rendu après l'animation")

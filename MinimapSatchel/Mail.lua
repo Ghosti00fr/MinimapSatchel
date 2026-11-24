@@ -2,8 +2,9 @@
 -- ============================================================
 --  Minimap Satchel — Mail.lua
 --  Alerte à l'arrivée du courrier : une animation + un son, une fois.
---  Se déclenche au passage « pas de courrier » -> « courrier », jamais
---  dans les 5 s qui suivent une connexion / un changement de zone.
+--  Se déclenche au passage « pas de courrier » -> « courrier ». Après une
+--  connexion ou un /reload, la 1re mise à jour (sous 20 s) est muette :
+--  c'est la synchro du serveur, pas une lettre qui arrive.
 --  Limite : une 2e lettre avec du courrier déjà non lu ne se voit pas.
 --  Sans HasNewMail : on suit l'affichage du cadre courrier Blizzard.
 -- ============================================================
@@ -11,7 +12,7 @@
 local MS = MinimapSatchel
 local Config = MS.Config
 
-local Mail = { mode = "off", armedAt = 0 }
+local Mail = { mode = "off", silentUntil = 0, synced = true }
 MS.Mail = Mail
 
 -- Sons du jeu proposés (constante SOUNDKIT si présente, sinon id numérique).
@@ -64,7 +65,11 @@ function Mail:Check()
     local now = state()
     local prev = self.last
     self.last = now
-    if prev == false and now and GetTime() > self.armedAt then self:Alert() end
+    if not self.synced then
+        self.synced = true
+        if GetTime() < self.silentUntil then return end
+    end
+    if prev == false and now then self:Alert() end
 end
 
 MS.OnReady(function()
@@ -74,8 +79,10 @@ MS.OnReady(function()
     elseif f then Mail.mode = "frame"
     else Mail.mode = "off" end
 
-    MS.On("PLAYER_ENTERING_WORLD", function()
-        Mail.armedAt = GetTime() + 5
+    MS.On("PLAYER_ENTERING_WORLD", function(_, isLogin, isReload)
+        if isLogin or isReload then
+            Mail.silentUntil, Mail.synced = GetTime() + 20, false
+        end
         if Mail.mode ~= "off" then Mail.last = state() end   -- pas « and state() or nil » : false deviendrait nil
     end)
     MS.On("UPDATE_PENDING_MAIL", function() Mail:Check() end)

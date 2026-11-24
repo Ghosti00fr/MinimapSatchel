@@ -60,8 +60,14 @@ function Frame:EnableMouse(v) self.mouseEnabled = v and true or false end
 function Frame:IsMouseOver() return M.mouseOver[self] and true or false end
 function Frame:GetCenter() if self.center then return self.center[1], self.center[2] end end
 function Frame:GetChildren() return unpack(self.children or {}) end
-function Frame:SetFrameStrata(s) self.strata = s end
-function Frame:SetFrameLevel(l) self.level = l end
+-- strate / niveau figés (LibDBIcon fige MEDIUM / 8) : Set* ignorés tant que figés
+function Frame:SetFrameStrata(s) if not self.fixedStrata then self.strata = s end end
+function Frame:GetFrameStrata() return self.strata or "MEDIUM" end
+function Frame:SetFixedFrameStrata(v) self.fixedStrata = v and true or false end
+function Frame:IsFrameStrataFixed() return self.fixedStrata or false end
+function Frame:SetFixedFrameLevel(v) self.fixedLevel = v and true or false end
+function Frame:IsFrameLevelFixed() return self.fixedLevel or false end
+function Frame:SetFrameLevel(l) if not self.fixedLevel then self.level = l end end
 function Frame:GetFrameLevel() return self.level or 1 end
 function Frame:SetText(s) self.txt = s end
 function Frame:GetText() return self.txt end

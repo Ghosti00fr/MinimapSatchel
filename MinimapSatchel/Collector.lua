@@ -133,7 +133,7 @@ function C:Scan()
     for _, c in ipairs(found) do
         local id = c.blizz or self:IdFor(c.frame, c.ldb, baseCount)
         if id and not ignored[id] and not self.known[id] then
-            local e = { id = id, frame = c.frame, origParent = c.frame:GetParent(),
+            local e = { id = id, frame = c.frame, origParent = c.frame:GetParent(), ldb = c.ldb,
                         addon = c.blizz and "Blizzard" or self:AddonFor(c.frame, id, c.ldb),
                         blizzard = c.blizz ~= nil }
             self.known[id] = e

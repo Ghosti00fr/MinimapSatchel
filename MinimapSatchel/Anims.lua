@@ -94,7 +94,7 @@ function A.play(id, target)
     if not def or not target then return false end
     finish()
     reset(target)
-    current = { def = def, target = target, t = 0, alpha = 1 }
+    current = { def = def, target = target, t = 0, alpha = target:GetAlpha() or 1 }
     target:SetAlpha(0)
     if def.start then def.start(fx, target) end
     fx:Show()

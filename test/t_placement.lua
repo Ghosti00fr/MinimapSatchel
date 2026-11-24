@@ -41,11 +41,9 @@ MS.Placement:Anchor(e.frame, MS.Satchel.grid, "TOPLEFT", MS.Satchel.grid, "TOPLE
 ok(e.frame.point[1] == "TOPLEFT" and e.frame.point[4] == 7, "Anchor passe malgré le verrou")
 
 -- Release : sorti au bord, sauvé
-e.frame:Hide()
 MS.Placement:Release(e, 45)
 ok(MS.Config:Get("out").FooButton == 45, "Release : angle sauvé")
 ok(e.frame:GetParent() == Minimap and e.state == "out", "Release : parent Minimap, état out")
-ok(e.frame:IsShown(), "Release : bouton affiché")
 local px, py = MS.Placement.EdgePoint(45, 140)
 ok(near(e.frame.point[4], px) and near(e.frame.point[5], py), "Release : posé au bord")
 
@@ -106,3 +104,57 @@ ok(near(MS.Config:Get("out").DragButton, 90), "drag dehors : angle suit le curse
 M.mouseOver[MS.Satchel.button] = true
 e.frame.scripts.OnDragStop(e.frame)
 ok(e.state == "in", "drag lâché sur le sac : rangée")
+
+-- ==== correctifs de la revue finale ====
+-- C1 : strate fixe de LibDBIcon (MEDIUM/8) -> au-dessus de la grille une fois rangé, rendue une fois sorti
+MS = setup()
+MS.Satchel.grid.strata, MS.Satchel.grid.level = "HIGH", 5
+e = entry(MS, "LibDBIcon10_Strata")
+e.frame.strata, e.frame.level, e.frame.fixedStrata, e.frame.fixedLevel = "MEDIUM", 8, true, true
+MS.Placement:Store(e)
+ok(e.frame.strata == "HIGH" and e.frame.level > 5, "C1 : rangé = strate HIGH au-dessus de la grille")
+ok(e.frame.fixedStrata == false and e.frame.fixedLevel == false, "C1 : strate et niveau défigés")
+MS.Placement:Release(e, 0)
+ok(e.frame.strata == "MEDIUM" and e.frame.level == 8, "C1 : sorti = strate d'origine")
+MS.Placement:Unlock(e)
+ok(e.frame.fixedStrata == true and e.frame.fixedLevel == true, "C1 : Unlock refige comme avant")
+
+-- I1 : Unlock rend l'ancrage d'origine
+MS = setup()
+e = entry(MS, "AnchoredButton")
+e.frame:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 3, -4)
+MS.Placement:Store(e)
+MS.Placement:Unlock(e)
+ok(e.frame.point[2] == Minimap and e.frame.point[4] == 3 and e.frame.point[5] == -4, "I1 : Unlock rend l'ancrage d'origine")
+
+-- I2 : LibDBIcon:Refresh remet ses scripts de drag -> la veille les reprend
+MS = setup()
+e = entry(MS, "RefreshButton")
+MS.Placement:Release(e, 0)
+local native = function() end
+e.frame:SetScript("OnDragStart", native)
+M.advance(2.1)
+ok(e.frame:GetScript("OnDragStart") ~= native, "I2 : drag repris par la veille")
+MS.Placement:Unlock(e)
+ok(e.frame:GetScript("OnDragStart") == native, "I2 : Unlock rend le drag natif le plus récent")
+
+-- I3 : Release n'affiche pas un bouton caché par son addon
+MS = setup()
+e = entry(MS, "HiddenByAddon")
+e.frame:Hide()
+MS.Placement:Release(e, 0)
+ok(not e.frame:IsShown(), "I3 : Release ne force pas Show")
+
+-- I4 : cadre Blizzard = verrou doux (pas d'override, réancrage par hook)
+MS = setup()
+MiniMapMailFrame = CreateFrame("Frame", "MiniMapMailFrame", Minimap); MiniMapMailFrame.w, MiniMapMailFrame.h = 33, 33
+MS.Config:Get("blizzard").MiniMapMailFrame = true
+e = MS.Collector:Scan().MiniMapMailFrame
+MS.Placement:Store(e)
+ok(rawget(MiniMapMailFrame, "ClearAllPoints") == nil and rawget(MiniMapMailFrame, "SetParent") == nil,
+   "I4 : pas d'override de méthode sur un cadre Blizzard")
+MiniMapMailFrame:SetPoint("TOP", UIParent, "TOP", 0, 0)
+M.advance(0.1)
+ok(MiniMapMailFrame.point[2] == MS.Satchel.grid, "I4 : repositionnement Blizzard corrigé au cadre suivant")
+M.advance(2.1)
+ok(MiniMapMailFrame.point[2] == MS.Satchel.grid, "I4 : la veille ne casse pas le verrou doux")

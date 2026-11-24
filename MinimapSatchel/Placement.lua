@@ -38,20 +38,50 @@ local function later(fn)
 end
 P.later = later
 
--- ---- Verrou par instance ----
+-- ---- Verrou ----
+-- Boutons d'addons : méthodes remplacées par instance (dur). Cadres Blizzard :
+-- jamais d'override (taint), on réancre après coup via hooksecurefunc (doux).
 local blocked = function() end
 local LOCKED = { "SetPoint", "ClearAllPoints", "SetParent" }
 
-function P:Lock(frame)
+local function savePoints(frame)
+    local pts = {}
+    local n = frame.GetNumPoints and frame:GetNumPoints() or 1
+    for i = 1, n do
+        local p = { frame:GetPoint(i) }
+        if p[1] then pts[#pts + 1] = p end
+    end
+    return pts
+end
+
+function P:Lock(frame, soft)
     if not frame.__msOrig then
-        local o = { inst = {} }
+        local o = { inst = {}, soft = soft, points = savePoints(frame),
+                    strata = frame:GetFrameStrata(), level = frame:GetFrameLevel(),
+                    fixedStrata = frame.IsFrameStrataFixed and frame:IsFrameStrataFixed() or false,
+                    fixedLevel = frame.IsFrameLevelFixed and frame:IsFrameLevelFixed() or false }
         for _, m in ipairs(LOCKED) do
             o.inst[m] = rawget(frame, m)   -- méthode propre à l'instance, s'il y en avait une
             o[m] = frame[m]
         end
         frame.__msOrig = o
+        -- LibDBIcon fige sa strate (MEDIUM/8) : sans ça, l'icône passe sous la grille
+        if frame.SetFixedFrameStrata then frame:SetFixedFrameStrata(false) end
+        if frame.SetFixedFrameLevel then frame:SetFixedFrameLevel(false) end
+        if soft and not frame.__msHooked then
+            frame.__msHooked = true
+            hooksecurefunc(frame, "SetPoint", function(f)
+                if f.__msApplying or not f.__msAnchor then return end
+                C_Timer.After(0, function()
+                    local a = f.__msAnchor
+                    if a then later(function() P:Anchor(f, unpack(a, 1, 6)) end) end
+                end)
+            end)
+        end
     end
-    for _, m in ipairs(LOCKED) do frame[m] = blocked end
+    if not frame.__msOrig.soft then
+        for _, m in ipairs(LOCKED) do frame[m] = blocked end
+    end
     self.managed[frame] = true
     self:Watch()
 end
@@ -62,9 +92,18 @@ function P:Unlock(entry)
     if not o then return end
     later(function()
         self.managed[frame] = nil
-        for _, m in ipairs(LOCKED) do frame[m] = o.inst[m] end
-        frame.__msOrig, frame.__msAnchor = nil, nil
+        frame.__msAnchor = nil
+        if not o.soft then for _, m in ipairs(LOCKED) do frame[m] = o.inst[m] end end
+        frame.__msOrig = nil
         frame:SetParent(entry.origParent or Minimap)
+        frame:SetFrameStrata(o.strata)
+        frame:SetFrameLevel(o.level)
+        if frame.SetFixedFrameStrata then frame:SetFixedFrameStrata(o.fixedStrata) end
+        if frame.SetFixedFrameLevel then frame:SetFixedFrameLevel(o.fixedLevel) end
+        frame:ClearAllPoints()
+        for _, p in ipairs(o.points) do frame:SetPoint(unpack(p)) end
+        local lib = entry.ldb and LibStub and LibStub("LibDBIcon-1.0", true)
+        if lib and lib.Refresh then lib:Refresh(entry.ldb) end
         self:UnhookDrag(frame)
         entry.state = nil
     end)
@@ -75,23 +114,44 @@ function P:Anchor(frame, parent, point, rel, relPoint, x, y)
     local setParent = o and o.SetParent or frame.SetParent
     local clear = o and o.ClearAllPoints or frame.ClearAllPoints
     local setPoint = o and o.SetPoint or frame.SetPoint
+    frame.__msApplying = true
     setParent(frame, parent)
     clear(frame)
     setPoint(frame, point, rel, relPoint, x, y)
+    frame.__msApplying = nil
     frame.__msAnchor = { parent, point, rel, relPoint, x, y }
+    -- strate : au-dessus de la grille une fois rangé, d'origine une fois sorti
+    if o then
+        if MS.Satchel and parent == MS.Satchel.grid then
+            frame:SetFrameStrata(parent:GetFrameStrata())
+            frame:SetFrameLevel(parent:GetFrameLevel() + 2)
+        else
+            frame:SetFrameStrata(o.strata)
+            frame:SetFrameLevel(o.level)
+        end
+    end
 end
 
--- Veille : un addon qui réécrase SetPoint sur son bouton perd son override.
+-- Veille (2 s) : override de méthode réécrasé, ou scripts de drag remis par
+-- l'addon (LibDBIcon:Refresh) -> on reprend la main.
 local watching = false
 function P:Watch()
     if watching then return end
     watching = true
     local function tick()
         for frame in pairs(P.managed) do
-            if frame.SetPoint ~= blocked or frame.SetParent ~= blocked or frame.ClearAllPoints ~= blocked then
+            local o = frame.__msOrig
+            if o and not o.soft and (frame.SetPoint ~= blocked or frame.SetParent ~= blocked
+                                     or frame.ClearAllPoints ~= blocked) then
                 for _, m in ipairs(LOCKED) do frame[m] = blocked end
                 local a = frame.__msAnchor
                 if a then later(function() P:Anchor(frame, unpack(a, 1, 6)) end) end
+            end
+            local d = frame.__msDrag
+            if d then
+                local cs, ce = frame:GetScript("OnDragStart"), frame:GetScript("OnDragStop")
+                if cs ~= d.ours.start then d.start = cs; frame:SetScript("OnDragStart", d.ours.start) end
+                if ce ~= d.ours.stop then d.stop = ce; frame:SetScript("OnDragStop", d.ours.stop) end
             end
         end
         C_Timer.After(2, tick)
@@ -105,7 +165,7 @@ local function layout() if MS.Satchel and MS.Satchel.Layout then MS.Satchel:Layo
 function P:Store(entry)
     later(function()
         Config:Get("out")[entry.id] = nil
-        self:Lock(entry.frame)
+        self:Lock(entry.frame, entry.blizzard)
         self:HookDrag(entry)
         local grid = MS.Satchel.grid
         self:Anchor(entry.frame, grid, "CENTER", grid, "CENTER", 0, 0)
@@ -114,14 +174,14 @@ function P:Store(entry)
     end)
 end
 
+-- Pas de Show() : un bouton caché par son addon (ou le courrier sans lettre) le reste.
 function P:Release(entry, angleDeg)
     later(function()
         Config:Get("out")[entry.id] = angleDeg
-        self:Lock(entry.frame)
+        self:Lock(entry.frame, entry.blizzard)
         self:HookDrag(entry)
         local x, y = P.EdgePoint(angleDeg, Minimap:GetWidth())
         self:Anchor(entry.frame, Minimap, "CENTER", Minimap, "CENTER", x, y)
-        entry.frame:Show()
         entry.state = "out"
         layout()
     end)
@@ -181,10 +241,11 @@ end
 function P:HookDrag(entry)
     local f = entry.frame
     if f.__msDrag then return end
-    f.__msDrag = { start = f:GetScript("OnDragStart"), stop = f:GetScript("OnDragStop") }
+    local ours = { start = function() P:BeginDrag(entry) end, stop = function() P:EndDrag(entry) end }
+    f.__msDrag = { start = f:GetScript("OnDragStart"), stop = f:GetScript("OnDragStop"), ours = ours }
     f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", function() P:BeginDrag(entry) end)
-    f:SetScript("OnDragStop", function() P:EndDrag(entry) end)
+    f:SetScript("OnDragStart", ours.start)
+    f:SetScript("OnDragStop", ours.stop)
 end
 
 function P:UnhookDrag(frame)

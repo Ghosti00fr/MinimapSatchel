@@ -14,7 +14,7 @@ local function setup(opts)
     local real = MS.Anims.play
     MS.Anims.play = function(id, target) plays[#plays + 1] = { id = id, target = target }; return real(id, target) end
     M.fire("ADDON_LOADED", "MinimapSatchel")
-    M.fire("PLAYER_ENTERING_WORLD")
+    M.fire("PLAYER_ENTERING_WORLD", true, false)   -- connexion
     return MS
 end
 
@@ -40,20 +40,31 @@ M.newMail = false; M.fire("UPDATE_PENDING_MAIL")
 M.newMail = true; M.fire("UPDATE_PENDING_MAIL")
 ok(#plays == 2, "true -> false -> true : 2e alerte")
 
--- rechargement : la fenêtre se réarme
+-- changement de zone avec courrier déjà non lu : rien
+M.fire("PLAYER_ENTERING_WORLD", false, false); M.advance(1); M.fire("UPDATE_PENDING_MAIL")
+ok(#plays == 2, "changement de zone, courrier déjà là : rien")
+-- changement de zone puis vraie arrivée : alerte tout de suite (pas de fenêtre muette)
 M.newMail = false; M.fire("UPDATE_PENDING_MAIL")
-M.fire("PLAYER_ENTERING_WORLD"); M.newMail = true; M.advance(1); M.fire("UPDATE_PENDING_MAIL")
-ok(#plays == 2, "changement de zone : fenêtre réarmée")
+M.fire("PLAYER_ENTERING_WORLD", false, false); M.advance(1)
+M.newMail = true; M.fire("UPDATE_PENDING_MAIL")
+ok(#plays == 3, "changement de zone puis arrivée : alerte")
+
+-- connexion lente : 1er UPDATE_PENDING_MAIL après 8 s avec du courrier = muet
+MS = setup({ frame = true })
+M.advance(8); M.newMail = true; M.fire("UPDATE_PENDING_MAIL")
+ok(#plays == 0, "connexion lente : 1re mise à jour muette")
+M.newMail = false; M.fire("UPDATE_PENDING_MAIL"); M.newMail = true; M.fire("UPDATE_PENDING_MAIL")
+ok(#plays == 1, "connexion lente : arrivée suivante alertée")
 
 -- options
 MS = setup({ frame = true })
 MS.Config:Set("anim", "shake"); MS.Config:Set("sound", "none")
-M.advance(10); M.newMail = true; M.fire("UPDATE_PENDING_MAIL")
+M.advance(10); M.fire("UPDATE_PENDING_MAIL"); M.newMail = true; M.fire("UPDATE_PENDING_MAIL")
 ok(plays[1].id == "shake", "animation choisie utilisée")
 ok(#M.sounds == 0, "sound=none : PlaySound non appelé")
 MS = setup({ frame = true })
 MS.Config:Set("anim", "none")
-M.advance(10); M.newMail = true; M.fire("UPDATE_PENDING_MAIL")
+M.advance(10); M.fire("UPDATE_PENDING_MAIL"); M.newMail = true; M.fire("UPDATE_PENDING_MAIL")
 ok(#plays == 1 and plays[1].id == "none" and #M.sounds == 1, "anim none : son seul")
 
 -- cible = sac quand le courrier est rangé
@@ -68,7 +79,7 @@ ok(MS.Mail:Target() == MS.Satchel.button, "cible = bouton-sac sans cadre courrie
 -- repli sans HasNewMail : visibilité du cadre courrier
 MS = setup({ noApi = true, frame = true })
 ok(MS.Mail.mode == "frame", "mode frame sans HasNewMail")
-M.advance(10)
+M.advance(10); M.fire("UPDATE_PENDING_MAIL")
 MiniMapMailFrame:Show()
 ok(#plays == 1, "mode frame : affichage du cadre = alerte")
 MiniMapMailFrame:Hide(); MiniMapMailFrame:Show()
