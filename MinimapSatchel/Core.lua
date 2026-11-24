@@ -77,3 +77,12 @@ function MS.On(event, fn)
     local list = subs[event]
     list[#list + 1] = fn
 end
+
+-- ---- Démarrage : Config:Init puis chaque module, au chargement de l'addon ----
+local ready = {}
+function MS.OnReady(fn) ready[#ready + 1] = fn end
+MS.On("ADDON_LOADED", function(_, name)
+    if name ~= "MinimapSatchel" or Config.db then return end
+    Config:Init()
+    for _, fn in ipairs(ready) do fn() end
+end)

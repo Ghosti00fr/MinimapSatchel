@@ -50,3 +50,12 @@ MS.On("FOO", function() a = a + 1 end)
 MS.On("FOO", function(_, x) b = x end)
 M.fire("FOO", 7)
 ok(a == 1 and b == 7, "MS.On : plusieurs abonnés, arguments transmis")
+
+-- OnReady : après Config:Init, seulement pour notre addon
+M.reset(); MS = M.load({ "Core" })
+local seen
+MS.OnReady(function() seen = MS.Config:Get("bg") end)
+M.fire("ADDON_LOADED", "OtherAddon")
+ok(seen == nil, "OnReady : pas déclenché pour un autre addon")
+M.fire("ADDON_LOADED", "MinimapSatchel")
+ok(seen == "dark", "OnReady : déclenché après Config:Init")
